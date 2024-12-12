@@ -145,7 +145,6 @@
 	(setenv "GO111MODULE" "on"))
 
   (setq major-mode 'go-mod-mode)
-  (go-mod--initialize-version-cache)
   (add-hook 'after-save-hook 'go-mod-format t t)
   (use-local-map go-mod-mode-map)
   (run-hooks 'go-mod-mode-hook))

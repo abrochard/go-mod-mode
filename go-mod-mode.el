@@ -199,14 +199,15 @@ Add `golangci-lint' to `flycheck-checkers'."
   "Prompt the user to select from list of all modules."
   (completing-read "Select module: " (go-mod--get-modules)))
 
-(defun go-mod--get-module-upgrade (mod-name)
+(defun go-mod--get-module-upgrade (mod-name &optional main)
   "Return the version that MOD-NAME can upgrade to."
   (when (not (go-mod--mod-enabled)) (error "Go modules not turned on"))
-  (message mod-name)
-  (let* ((command (format "go list -m -u %s" (shell-quote-argument mod-name)))
-		 (output (shell-command-to-string command)))
-	(and (string-match "\\[\\(.*\\)\\]" output)
-		 (match-string 1 output))))
+  (if main
+      "main"
+    (let* ((command (format "go list -m -u %s" (shell-quote-argument mod-name)))
+		   (output (shell-command-to-string command)))
+	  (and (string-match "\\[\\(.*\\)\\]" output)
+		   (match-string 1 output)))))
 
 (defun go-mod--get-module-versions (mod-name)
   "Return a list of the versions for a particular MOD-NAME."
@@ -231,15 +232,14 @@ Add `golangci-lint' to `flycheck-checkers'."
 	   (not (equal "command-line-arguments\n" (shell-command-to-string "go list -m")))))
 
 ;;; interactive commands
-(defun go-mod-upgrade ()
+(defun go-mod-upgrade (&optional main)
   "Upgrade the selected module."
-  (interactive)
+  (interactive "P")
   (when (not (go-mod--mod-enabled))
 	(error "Go modules not enabled"))
-
   (let* ((mod-name (or (go-mod--module-on-line) (go-mod--prompt-all-modules)))
-		 (command (and mod-name (format "go get %s@latest" (shell-quote-argument mod-name))))
-		 (upgrade-to (go-mod--get-module-upgrade mod-name)))
+		 (command (and mod-name (format "go get %s@%s" (shell-quote-argument mod-name) (if main "main" "latest"))))
+		 (upgrade-to (go-mod--get-module-upgrade mod-name main)))
 	(if (not upgrade-to)
 		(message "Module is already at latest version")
 	  (when (y-or-n-p (format "Do you want to upgrade %s to %s? " mod-name upgrade-to))
